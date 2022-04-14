@@ -23,6 +23,7 @@ def evaluate(env, agent, video, num_episodes, eval_mode, adapt=False):
 			ep_agent = agent
 		obs = env.reset()
 		video.init(enabled=True)
+		video.record(env, eval_mode)
 		done = False
 		episode_reward = 0
 		while not done:

@@ -86,16 +86,21 @@ def main(args):
 		action_shape=env.action_space.shape,
 		args=args
 	)
+	# print(os.path.join(model_dir, '1000.pt'))
+	# agent = torch.load(os.path.join(model_dir, '1000.pt'))
 
 	start_step, episode, episode_reward, done = 0, 0, 0, True
 	L = Logger(work_dir)
 	start_time = time.time()
+	rewards = []
+
 	for step in range(start_step, args.train_steps+1):
 		if done:
-			if step > start_step:
-				L.log('train/duration', time.time() - start_time, step)
-				start_time = time.time()
-				L.dump(step)
+			print(step, start_step, args.save_freq)
+			# if step > start_step:
+			# 	L.log('train/duration', time.time() - start_time, step)
+			# 	start_time = time.time()
+			# 	L.dump(step)
 
 			# Evaluate agent periodically
 			if step % args.eval_freq == 0:
@@ -135,6 +140,7 @@ def main(args):
 
 		# Take step
 		next_obs, reward, done, _ = env.step(action)
+		rewards.append(reward)
 		done_bool = 0 if episode_step + 1 == env._max_episode_steps else float(done)
 		replay_buffer.add(obs, action, reward, next_obs, done_bool)
 		episode_reward += reward

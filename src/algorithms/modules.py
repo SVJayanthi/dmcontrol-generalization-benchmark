@@ -96,6 +96,43 @@ class Flatten(nn.Module):
 		return x.view(x.size(0), -1)
 
 
+class LUSR(nn.Module):
+	def __init__(self, shared_cnn, head_cnn, obs_shape, num_shared_layers, num_filters, class_latent_size = 8, content_latent_size = 32):
+		super().__init__()
+		self.linear_mu = Encoder(
+			shared_cnn,
+			head_cnn,
+			RLProjection(head_cnn.out_shape, content_latent_size)
+		)
+		# self.linear_logsigma = Encoder(
+		# 	shared_cnn,
+		# 	head_cnn,
+		# 	RLProjection(head_cnn.out_shape, content_latent_size)
+		# )
+		self.linear_classcode = Encoder(
+			shared_cnn,
+			head_cnn,
+			RLProjection(head_cnn.out_shape, class_latent_size)
+		)
+
+		self.decoder_lusr = LUSR_Decoder(content_latent_size+class_latent_size, flatten_size=head_cnn.out_shape[0])
+		# self.decoder_head_cnn = nn.Linear(content_latent_size+class_latent_size,head_cnn.out_shape[0] )
+		# self.decoder_shared_cnn = SharedCNNDecoder(obs_shape, num_shared_layers, num_filters).cuda()
+
+	def encoder(self, x):
+		mu = self.linear_mu(x)
+		# logsigma = self.linear_logsigma(x)
+		classcode = self.linear_classcode(x)
+
+		return mu, classcode
+
+	def decoder(self, x):
+		# x = self.decoder_head_cnn(x)
+		# x = x.unsqueeze(-1).unsqueeze(-1)
+		# x = self.decoder_shared_cnn(x)
+		return self.decoder_lusr(x)
+
+
 class RLProjection(nn.Module):
 	def __init__(self, in_shape, out_dim):
 		super().__init__()
@@ -125,6 +162,44 @@ class SODAMLP(nn.Module):
 
 	def forward(self, x):
 		return self.mlp(x)
+
+
+class LUSR_Decoder(nn.Module):
+    def __init__(self, latent_size = 32, output_channel = 9, flatten_size=1024):
+        super(LUSR_Decoder, self).__init__()
+
+        self.fc = nn.Linear(latent_size, flatten_size)
+
+        self.main = nn.Sequential(
+            nn.ConvTranspose2d(flatten_size, 128, 6, stride=2), nn.ReLU(),
+            nn.ConvTranspose2d(128, 64, 6, stride=2), nn.ReLU(),
+            nn.ConvTranspose2d(64, 32, 6, stride=2), nn.ReLU(),
+            nn.ConvTranspose2d(32, output_channel, 14, stride=2), nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        x = self.fc(x)
+        x = x.unsqueeze(-1).unsqueeze(-1)
+        x = self.main(x)
+        return x
+
+
+class SharedCNNDecoder(nn.Module):
+	def __init__(self, obs_shape, num_layers=11, num_filters=32):
+		super().__init__()
+		assert len(obs_shape) == 3
+		self.num_layers = num_layers
+		self.num_filters = num_filters
+
+		self.layers = [nn.Sigmoid(), nn.ConvTranspose2d(num_filters, obs_shape[0], 3, stride=2)]
+		for _ in range(1, num_layers):
+			self.layers.append(nn.ReLU())
+			self.layers.append(nn.ConvTranspose2d(num_filters, num_filters, 3, stride=1))
+		self.layers = nn.Sequential(*reversed(self.layers))
+		self.apply(weight_init)
+
+	def forward(self, x):
+		return self.layers(x)
 
 
 class SharedCNN(nn.Module):

@@ -68,11 +68,11 @@ def parse_args():
 	# misc
 	parser.add_argument('--seed', default=None, type=int)
 	parser.add_argument('--log_dir', default='logs', type=str)
-	parser.add_argument('--save_video', default=False, action='store_true')
+	parser.add_argument('--save_video', default=True, action='store_true')
 
 	args = parser.parse_args()
 
-	assert args.algorithm in {'sac', 'rad', 'curl', 'pad', 'soda', 'drq', 'svea'}, f'specified algorithm "{args.algorithm}" is not supported'
+	# assert args.algorithm in {'sac', 'rad', 'curl', 'pad', 'soda', 'drq', 'svea'}, f'specified algorithm "{args.algorithm}" is not supported'
 
 	assert args.eval_mode in {'train', 'color_easy', 'color_hard', 'video_easy', 'video_hard', 'distracting_cs', 'none'}, f'specified mode "{args.eval_mode}" is not supported'
 	assert args.seed is not None, 'must provide seed for experiment'
