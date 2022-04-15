@@ -104,11 +104,11 @@ class LUSR(nn.Module):
 			head_cnn,
 			RLProjection(head_cnn.out_shape, content_latent_size)
 		)
-		# self.linear_logsigma = Encoder(
-		# 	shared_cnn,
-		# 	head_cnn,
-		# 	RLProjection(head_cnn.out_shape, content_latent_size)
-		# )
+		self.linear_logsigma = Encoder(
+			shared_cnn,
+			head_cnn,
+			RLProjection(head_cnn.out_shape, content_latent_size)
+		)
 		self.linear_classcode = Encoder(
 			shared_cnn,
 			head_cnn,
@@ -121,10 +121,10 @@ class LUSR(nn.Module):
 
 	def encoder(self, x):
 		mu = self.linear_mu(x)
-		# logsigma = self.linear_logsigma(x)
+		logsigma = self.linear_logsigma(x)
 		classcode = self.linear_classcode(x)
 
-		return mu, classcode
+		return mu, logsigma, classcode
 
 	def decoder(self, x):
 		# x = self.decoder_head_cnn(x)

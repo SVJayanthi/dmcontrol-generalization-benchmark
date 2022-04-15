@@ -24,11 +24,11 @@ class LUSR(SAC):
 		self.lusr = m.LUSR(self.shared_cnn, self.head_cnn, obs_shape, args.num_shared_layers, args.num_filters).cuda()
 		self.lusr_optimizer = torch.optim.Adam(self.lusr.parameters(), lr=args.actor_lr)
 
-	def vae_loss(self, x, mu, recon_x, beta=1):
+	def vae_loss(self, x, mu, logsigma, recon_x, beta=1):
 		recon_loss = F.mse_loss(x, recon_x, reduction='mean')
-		# kl_loss = -0.5 * torch.sum(1 + logsigma - mu.pow(2) - logsigma.exp())
-		# kl_loss = kl_loss / torch.numel(x)
-		return recon_loss #+ kl_loss * beta
+		kl_loss = -0.5 * torch.sum(1 + logsigma - mu.pow(2) - logsigma.exp())
+		kl_loss = kl_loss / torch.numel(x)
+		return recon_loss + kl_loss * beta
 
 	def forward_loss(self, x, beta):
 		mu, logsigma, classcode = self.lusr.encoder(x)
@@ -76,7 +76,7 @@ class LUSR(SAC):
 
 		floss = self.vae_loss(x, mu, recon_x1, beta) + self.vae_loss(x, mu, recon_x2, beta)
 
-		randcontent = torch.randn_like(mu)
+		randcontent = torch.randn_like(mu).cuda()
 		latentcode1 = torch.cat([randcontent, classcode], dim=1)
 		latentcode2 = torch.cat([randcontent, shuffled_classcode], dim=1)
 
@@ -95,17 +95,21 @@ class LUSR(SAC):
 		# 	imgs.append(augmentations.random_conv(obs.clone()))
 		# imgs = np.array(imgs)
 		self.lusr_optimizer.zero_grad()
-		# floss = self.forward_loss(imgs, 10)
-		# floss = floss / imgs.shape[0]
+		floss = self.forward_loss(imgs, 10)
+		floss = floss / imgs.shape[0]
+		print("FORWARD LOSS: ", floss)
 
+		imgs = utils.cat(imgs, augmentations.random_conv(imgs.clone()))
 		# backward circle
 		# imgs = imgs.reshape(-1, *imgs.shape[2:])
-		# bloss = self.backward_loss(imgs)
-		floss, bloss = self.lusr_loss(imgs, 10)
-		floss = floss / imgs.shape[0]
+		bloss = self.backward_loss(imgs)
+		print("BACKWARD LOSS: ", floss)
+		# floss, bloss = self.lusr_loss(imgs, 10)
+		# floss = floss / imgs.shape[0]
 
 		(floss + bloss).backward()
 		self.lusr_optimizer.step()
+		print("STEP")
 		return floss, bloss
 
 	def update_critic(self, obs, action, reward, next_obs, not_done, L=None, step=None):
@@ -146,7 +150,7 @@ class LUSR(SAC):
 
 		self.update_critic(obs, action, reward, next_obs, not_done, L, step)
 
-		floss, bloss = self.update_lusr(obs[:2])
+		floss, bloss = self.update_lusr(obs)
 		if L is not None:
 			L.log('train/forward_loss', floss, step)
 			L.log('train/backward_loss', bloss, step)
