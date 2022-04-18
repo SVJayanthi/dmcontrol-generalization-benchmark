@@ -66,6 +66,7 @@ def parse_args():
 	parser.add_argument('--distracting_cs_intensity', default=0., type=float)
 
 	# lusr encoder
+	parser.add_argument('--freeze_shared_cnn', default=False, action='store_true')
 	parser.add_argument('--use_lusr_backbone', default=False, action='store_true')
 	parser.add_argument('--lusr_weights_path', default=None, type=str)
 
