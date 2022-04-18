@@ -35,6 +35,14 @@ def soft_update_params(net, target_net, tau):
 def cat(x, y, axis=0):
 	return torch.cat([x, y], axis=0)
 
+def transform_batch_obs(batch_obs, transform):
+	batch_obs_tensor = torch.FloatTensor(batch_obs) / 255
+	for batch_i in range(batch_obs.shape[0]):
+		for i in range(3):
+			frame = batch_obs_tensor[batch_i, 3*i : 3*i + 3, :, :]
+			batch_obs_tensor[batch_i, 3*i : 3*i + 3, :, :] = transform(frame)
+
+	return (batch_obs_tensor.numpy() * 255).astype(np.uint8)
 
 def set_seed_everywhere(seed):
 	torch.manual_seed(seed)
