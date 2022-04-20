@@ -10,6 +10,7 @@ from logger import Logger
 from video import VideoRecorder
 from torchvision import transforms
 import augmentations
+from pathlib import Path
 
 def main(args):
     # Set seed
@@ -58,7 +59,8 @@ def main(args):
     rewards = []
 
     dataset_dir = '/home/taylor/Desktop/rlr/dmcontrol_data'
-    saved_obs = []
+    num_domains = 5
+    saved_obs = list([[] for i in range(num_domains)])
 
     for step in range(start_step, args.train_steps+1):
         if done:
@@ -82,31 +84,36 @@ def main(args):
 
         if np.random.rand() < 0.1: # TODO: maybe weight by how far along episode is
             dim_added_obs = obs._force()[np.newaxis, ...]
-            saved_obs.append(dim_added_obs)
+            class_num = np.random.choice(range(0, num_domains))
+            saved_obs[class_num].append(dim_added_obs)
 
         # Save batch of observations
-        if len(saved_obs) >= 1000:
-            batch_saved_obs = np.concatenate(saved_obs, axis=0)
+        for class_num in range(num_domains):
+            if len(saved_obs[class_num]) >= 1000:
+                batch_saved_obs = np.concatenate(saved_obs[class_num], axis=0)
 
-            class_num = np.random.choice(range(1, 5), p=[0, 0, 0, 1])
-            class_dir = f'dmcontrol{class_num}'
-            if class_num == 2:
-                batch_saved_obs = utils.transform_batch_obs(batch_saved_obs, transforms.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.05, hue=[-0.4, -0.2]))
-            elif class_num == 3:
-                batch_saved_obs = utils.transform_batch_obs(batch_saved_obs, transforms.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.05, hue=[0.2, 0.4]))
+                class_dir = f'dmcontrol{class_num + 1}'
+                if class_num == 1:
+                    batch_saved_obs = utils.transform_batch_obs(batch_saved_obs, transforms.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.05, hue=[-8/18, -6/18]))
+                elif class_num == 2:
+                    batch_saved_obs = utils.transform_batch_obs(batch_saved_obs, transforms.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.05, hue=[-4/18, -2/18]))
+                elif class_num == 3:
+                    batch_saved_obs = utils.transform_batch_obs(batch_saved_obs, transforms.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.05, hue=[2/18, 4/18]))
+                elif class_num == 4:
+                    batch_saved_obs = utils.transform_batch_obs(batch_saved_obs, transforms.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.05, hue=[6/18, 8/18]))
 
+                batch_saved_obs = np.transpose(batch_saved_obs, (0, 2, 3, 1))
 
-            # import pdb; pdb.set_trace()
-            batch_saved_obs = np.transpose(batch_saved_obs, (0, 2, 3, 1))
+                file_index = 0
+                while os.path.exists(os.path.join(dataset_dir, class_dir, f'{file_index}.npz')):
+                    file_index += 1
+                dir = os.path.join(dataset_dir, class_dir)
+                path = os.path.join(dir, f'{file_index}.npz')
+                print(f'Saving {len(saved_obs[class_num])} observations to {path}')
 
-            file_index = 0
-            while os.path.exists(os.path.join(dataset_dir, class_dir, f'{file_index}.npz')):
-                file_index += 1
-            path = os.path.join(dataset_dir, class_dir, f'{file_index}.npz')
-            print(f'Saving {len(saved_obs)} observations to {path}')
-
-            np.savez(path, obs=batch_saved_obs)
-            saved_obs = []
+                Path(dir).mkdir(parents=True, exist_ok=True)
+                np.savez(path, obs=batch_saved_obs)
+                saved_obs[class_num] = []
 
         # Take step
         next_obs, reward, done, _ = env.step(action)
