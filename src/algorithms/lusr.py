@@ -33,19 +33,18 @@ class LUSR(SAC):
 	def forward_loss(self, x, beta):
 		mu, classcode = self.lusr.encoder(x)
 		# contentcode = reparameterize(mu, logsigma)
-		# shuffled_classcode = classcode[torch.randperm(classcode.shape[0])]
+		shuffled_classcode = classcode[torch.randperm(classcode.shape[0])]
 
-		# latentcode1 = torch.cat([contentcode, shuffled_classcode], dim=1)
+		latentcode1 = torch.cat([mu, shuffled_classcode], dim=1)
 		latentcode2 = torch.cat([mu, classcode], dim=1)
 
-		# recon_x1 = self.lusr.decoder(latentcode1)
-		recon_imgs = self.lusr.decoder(latentcode2)*255
+		recon_x1 = self.lusr.decoder(latentcode1)*255
+		recon_x2 = self.lusr.decoder(latentcode2)*255
 
 		# print(x[0])
 		# print(recon_imgs[0])
 
-		return F.l1_loss(x, recon_imgs)
-	#self.vae_loss(x, mu, logsigma, recon_x1, beta) + self.vae_loss(x, mu, logsigma, recon_x2, beta)
+		return self.vae_loss(x, mu, 0, recon_x1, beta) + self.vae_loss(x, mu, 0, recon_x2, beta)
 
 	def backward_loss(self, x, device=None):
 		mu, classcode = self.lusr.encoder(x)
