@@ -15,8 +15,16 @@ class SAC(object):
 		self.actor_update_freq = args.actor_update_freq
 		self.critic_target_update_freq = args.critic_target_update_freq
 
-		shared_cnn = m.SharedCNN(obs_shape, args.num_shared_layers, args.num_filters).cuda()
+		if args.use_lusr_backbone:
+			shared_cnn = m.LUSRCompatibleSharedCNN(obs_shape, args.lusr_weights_path)
+		else:
+			shared_cnn = m.SharedCNN(obs_shape, args.num_shared_layers, args.num_filters).cuda()
+		if args.freeze_shared_cnn:
+			for param in shared_cnn.parameters():
+				param.requires_grad = False
+
 		head_cnn = m.HeadCNN(shared_cnn.out_shape, args.num_head_layers, args.num_filters).cuda()
+		
 		actor_encoder = m.Encoder(
 			shared_cnn,
 			head_cnn,
@@ -60,7 +68,7 @@ class SAC(object):
 	@property
 	def alpha(self):
 		return self.log_alpha.exp()
-		
+
 	def _obs_to_input(self, obs):
 		if isinstance(obs, utils.LazyFrames):
 			_obs = np.array(obs)

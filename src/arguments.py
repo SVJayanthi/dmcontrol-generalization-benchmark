@@ -12,7 +12,7 @@ def parse_args():
 	parser.add_argument('--action_repeat', default=4, type=int)
 	parser.add_argument('--episode_length', default=1000, type=int)
 	parser.add_argument('--eval_mode', default='color_hard', type=str)
-	
+
 	# agent
 	parser.add_argument('--algorithm', default='sac', type=str)
 	parser.add_argument('--train_steps', default='500k', type=str)
@@ -40,7 +40,7 @@ def parse_args():
 	parser.add_argument('--num_filters', default=32, type=int)
 	parser.add_argument('--projection_dim', default=100, type=int)
 	parser.add_argument('--encoder_tau', default=0.05, type=float)
-	
+
 	# entropy maximization
 	parser.add_argument('--init_temperature', default=0.1, type=float)
 	parser.add_argument('--alpha_lr', default=1e-4, type=float)
@@ -65,10 +65,15 @@ def parse_args():
 	parser.add_argument('--eval_episodes', default=30, type=int)
 	parser.add_argument('--distracting_cs_intensity', default=0., type=float)
 
+	# lusr encoder
+	parser.add_argument('--freeze_shared_cnn', default=False, action='store_true')
+	parser.add_argument('--use_lusr_backbone', default=False, action='store_true')
+	parser.add_argument('--lusr_weights_path', default=None, type=str)
+
 	# misc
 	parser.add_argument('--seed', default=None, type=int)
 	parser.add_argument('--log_dir', default='logs', type=str)
-	parser.add_argument('--save_video', default=True, action='store_true')
+	parser.add_argument('--save_video', default=False, action='store_true')
 
 	args = parser.parse_args()
 
@@ -94,5 +99,5 @@ def parse_args():
 	else:
 		args.image_size = 84
 		args.image_crop_size = 84
-	
+
 	return args

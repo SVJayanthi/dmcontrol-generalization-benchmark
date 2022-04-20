@@ -30,7 +30,7 @@ def evaluate(env, agent, video, num_episodes, L, step, test_env=False):
 			video.save(f'{step}{_test_env}.mp4')
 			L.log(f'eval/episode_reward{_test_env}', episode_reward, step)
 		episode_rewards.append(episode_reward)
-	
+
 	return np.mean(episode_rewards)
 
 
@@ -96,11 +96,10 @@ def main(args):
 
 	for step in range(start_step, args.train_steps+1):
 		if done:
-			print(step, start_step, args.save_freq)
-			# if step > start_step:
-			# 	L.log('train/duration', time.time() - start_time, step)
-			# 	start_time = time.time()
-			# 	L.dump(step)
+			if step > start_step:
+				L.log('train/duration', time.time() - start_time, step)
+				start_time = time.time()
+				L.dump(step)
 
 			# Evaluate agent periodically
 			if step % args.eval_freq == 0:
