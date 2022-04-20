@@ -128,8 +128,8 @@ class ReplayBuffer(object):
 		obses, next_obses = [], []
 		for i in idxs:
 			obs, next_obs = self._obses[i]
-			obses.append(np.array(obs, copy=False))
-			next_obses.append(np.array(next_obs, copy=False))
+			obses.append(np.array(obs, copy=False)/255)
+			next_obses.append(np.array(next_obs, copy=False)/255)
 		return np.array(obses), np.array(next_obses)
 
 	def sample_soda(self, n=None):
