@@ -135,8 +135,19 @@ def main(args):
 		# Run training update
 		if step >= args.init_steps:
 			num_updates = args.init_steps if step == args.init_steps else 1
+			# floss, bloss = [], []
 			for _ in range(num_updates):
 				agent.update(replay_buffer, L, step)
+			# 	floss.append(f.item())
+			# 	bloss.append(b.item())
+			# a_file = open(os.path.join(work_dir, 'floss.txt'), "a")
+			# np.savetxt(a_file, floss)
+			# a_file.close()
+			# b_file = open(os.path.join(work_dir, 'bloss.txt'), "a")
+			# np.savetxt(b_file, bloss)
+			# b_file.close()
+			# if step == args.init_steps:
+			# 	torch.save(agent, os.path.join(model_dir, f'{step}.pt'))
 
 		# Take step
 		next_obs, reward, done, _ = env.step(action)

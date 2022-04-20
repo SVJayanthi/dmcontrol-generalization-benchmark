@@ -104,27 +104,27 @@ class LUSR(nn.Module):
 			head_cnn,
 			RLProjection(head_cnn.out_shape, content_latent_size)
 		)
-		self.linear_logsigma = Encoder(
-			shared_cnn,
-			head_cnn,
-			RLProjection(head_cnn.out_shape, content_latent_size)
-		)
+		# self.linear_logsigma = Encoder(
+		# 	shared_cnn,
+		# 	head_cnn,
+		# 	RLProjection(head_cnn.out_shape, content_latent_size)
+		# )
 		self.linear_classcode = Encoder(
 			shared_cnn,
 			head_cnn,
 			RLProjection(head_cnn.out_shape, class_latent_size)
 		)
 
-		self.decoder_lusr = LUSR_Decoder(content_latent_size+class_latent_size, flatten_size=head_cnn.out_shape[0])
+		self.decoder_lusr = LUSR_Decoder(content_latent_size +class_latent_size, flatten_size=head_cnn.out_shape[0])
 		# self.decoder_head_cnn = nn.Linear(content_latent_size+class_latent_size,head_cnn.out_shape[0] )
 		# self.decoder_shared_cnn = SharedCNNDecoder(obs_shape, num_shared_layers, num_filters).cuda()
 
 	def encoder(self, x):
 		mu = self.linear_mu(x)
-		logsigma = self.linear_logsigma(x)
+		# logsigma = self.linear_logsigma(x)
 		classcode = self.linear_classcode(x)
 
-		return mu, logsigma, classcode
+		return mu, classcode #logsigma, classcode
 
 	def decoder(self, x):
 		# x = self.decoder_head_cnn(x)
@@ -173,8 +173,8 @@ class LUSR_Decoder(nn.Module):
         self.main = nn.Sequential(
             nn.ConvTranspose2d(flatten_size, 128, 6, stride=2), nn.ReLU(),
             nn.ConvTranspose2d(128, 64, 6, stride=2), nn.ReLU(),
-            nn.ConvTranspose2d(64, 32, 6, stride=2), nn.ReLU(),
-            nn.ConvTranspose2d(32, output_channel, 14, stride=2), nn.Sigmoid()
+            nn.ConvTranspose2d(64, 32, 8, stride=2), nn.ReLU(),
+            nn.ConvTranspose2d(32, output_channel, 10, stride=2), nn.Sigmoid()
         )
 
     def forward(self, x):
