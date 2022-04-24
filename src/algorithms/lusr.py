@@ -41,9 +41,6 @@ class LUSR(SAC):
 		recon_x1 = self.lusr.decoder(latentcode1)*255
 		recon_x2 = self.lusr.decoder(latentcode2)*255
 
-		# print(x[0])
-		# print(recon_imgs[0])
-
 		return self.vae_loss(x, mu, 0, recon_x1, beta) + self.vae_loss(x, mu, 0, recon_x2, beta)
 
 	def backward_loss(self, x, device=None):
@@ -99,13 +96,13 @@ class LUSR(SAC):
 		self.lusr_optimizer.zero_grad()
 		floss = self.forward_loss(imgs, 10)
 		floss = floss / imgs.shape[0]
-		print("FORWARD LOSS: ", floss.item())
+		# print("FORWARD LOSS: ", floss.item())
 
 		imgs = utils.cat(imgs, augmentations.random_conv(imgs.clone()))
 		# backward circle
 		# imgs = imgs.reshape(-1, *imgs.shape[2:])
 		bloss = self.backward_loss(imgs)
-		print("BACKWARD LOSS: ", bloss.item())
+		# print("BACKWARD LOSS: ", bloss.item())
 		# floss, bloss = self.lusr_loss(imgs, 10)
 		# floss = floss / imgs.shape[0]
 
@@ -153,24 +150,6 @@ class LUSR(SAC):
 
 		self.update_critic(obs, action, reward, next_obs, not_done, L, step)
 
-		# floss, bloss = self.update_lusr(obs[:4])
-		# if L is not None:
-		# 	L.log('train/forward_loss', floss, step)
-		# 	L.log('train/backward_loss', bloss, step)
-
-		if step % self.actor_update_freq == 0:
-			self.update_actor_and_alpha(obs, L, step)
-
-		if step % self.critic_target_update_freq == 0:
-			self.soft_update_critic_target()
-
-		return
-
-	def update(self, replay_buffer, L, step):
-		obs, action, reward, next_obs, not_done = replay_buffer.sample_drq()
-
-		self.update_critic(obs, action, reward, next_obs, not_done, L, step)
-
 		floss, bloss = self.update_lusr(obs[:16])
 		if L is not None:
 			L.log('train/forward_loss', floss, step)
@@ -183,3 +162,20 @@ class LUSR(SAC):
 			self.soft_update_critic_target()
 
 		return floss, bloss
+
+	def update(self, replay_buffer, L, step):
+		obs, action, reward, next_obs, not_done = replay_buffer.sample_drq()
+
+		self.update_critic(obs, action, reward, next_obs, not_done, L, step)
+
+		# floss, bloss = self.update_lusr(obs[:16])
+		# if L is not None:
+		# 	L.log('train/forward_loss', floss, step)
+		# 	L.log('train/backward_loss', bloss, step)
+
+		if step % self.actor_update_freq == 0:
+			self.update_actor_and_alpha(obs, L, step)
+
+		if step % self.critic_target_update_freq == 0:
+			self.soft_update_critic_target()
+

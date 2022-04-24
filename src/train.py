@@ -96,10 +96,10 @@ def main(args):
 
 	for step in range(start_step, args.train_steps+1):
 		if done:
-			if step > start_step:
-				L.log('train/duration', time.time() - start_time, step)
-				start_time = time.time()
-				L.dump(step)
+			# if step > start_step:
+				# L.log('train/duration', time.time() - start_time, step)
+				# start_time = time.time()
+				# L.dump(step)
 
 			# Evaluate agent periodically
 			if step % args.eval_freq == 0:
@@ -134,19 +134,23 @@ def main(args):
 		# Run training update
 		if step >= args.init_steps:
 			num_updates = args.init_steps if step == args.init_steps else 1
-			# floss, bloss = [], []
-			for _ in range(num_updates):
+			if step == args.init_steps:
+				floss, bloss = [], []
+				for _ in range(num_updates):
+					f, b = agent.update_init(replay_buffer, L, step)
+					floss.append(f.item())
+					bloss.append(b.item())
+				a_file = open(os.path.join(work_dir, 'floss.txt'), "a")
+				np.savetxt(a_file, floss)
+				a_file.close()
+				b_file = open(os.path.join(work_dir, 'bloss.txt'), "a")
+				np.savetxt(b_file, bloss)
+				b_file.close()
+				torch.save(agent, os.path.join(model_dir, f'{step}.pt'))
+				for _ in range(num_updates):
+					agent.update(replay_buffer, L, step)
+			else:
 				agent.update(replay_buffer, L, step)
-			# 	floss.append(f.item())
-			# 	bloss.append(b.item())
-			# a_file = open(os.path.join(work_dir, 'floss.txt'), "a")
-			# np.savetxt(a_file, floss)
-			# a_file.close()
-			# b_file = open(os.path.join(work_dir, 'bloss.txt'), "a")
-			# np.savetxt(b_file, bloss)
-			# b_file.close()
-			# if step == args.init_steps:
-			# 	torch.save(agent, os.path.join(model_dir, f'{step}.pt'))
 
 		# Take step
 		next_obs, reward, done, _ = env.step(action)
