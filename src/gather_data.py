@@ -84,7 +84,7 @@ def main(args):
 
         if np.random.rand() < 0.1: # TODO: maybe weight by how far along episode is
             dim_added_obs = obs._force()[np.newaxis, ...]
-            class_num = np.random.choice(range(0, num_domains))
+            class_num = np.random.choice(range(num_domains))
             saved_obs[class_num].append(dim_added_obs)
 
         # Save batch of observations
@@ -94,13 +94,13 @@ def main(args):
 
                 class_dir = f'dmcontrol{class_num + 1}'
                 if class_num == 1:
-                    batch_saved_obs = utils.transform_batch_obs(batch_saved_obs, transforms.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.05, hue=[-8/18, -6/18]))
+                    batch_saved_obs = utils.transform_batch_obs(batch_saved_obs, transforms.ColorJitter(brightness=0, contrast=0, saturation=0, hue=[-7/18, -7/18]))
                 elif class_num == 2:
-                    batch_saved_obs = utils.transform_batch_obs(batch_saved_obs, transforms.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.05, hue=[-4/18, -2/18]))
+                    batch_saved_obs = utils.transform_batch_obs(batch_saved_obs, transforms.ColorJitter(brightness=0, contrast=0, saturation=0, hue=[-3/18, -3/18]))
                 elif class_num == 3:
-                    batch_saved_obs = utils.transform_batch_obs(batch_saved_obs, transforms.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.05, hue=[2/18, 4/18]))
+                    batch_saved_obs = utils.transform_batch_obs(batch_saved_obs, transforms.ColorJitter(brightness=0, contrast=0, saturation=0, hue=[3/18, 3/18]))
                 elif class_num == 4:
-                    batch_saved_obs = utils.transform_batch_obs(batch_saved_obs, transforms.ColorJitter(brightness=0.05, contrast=0.05, saturation=0.05, hue=[6/18, 8/18]))
+                    batch_saved_obs = utils.transform_batch_obs(batch_saved_obs, transforms.ColorJitter(brightness=0, contrast=0, saturation=0, hue=[7/18, 7/18]))
 
                 batch_saved_obs = np.transpose(batch_saved_obs, (0, 2, 3, 1))
 

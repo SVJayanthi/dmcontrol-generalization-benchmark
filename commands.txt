@@ -1,2 +1,0 @@
-
-python src\train.py --algorithm svea --seed 1 --train_steps 100k --save_freq 1k --eval_freq 1k
