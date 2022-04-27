@@ -22,7 +22,7 @@ class LUSR(SAC):
 		self.svea_beta = args.svea_beta
 
 		self.lusr = m.LUSR(self.shared_cnn, self.head_cnn, obs_shape, args.num_shared_layers, args.num_filters).cuda()
-		self.lusr_optimizer = torch.optim.Adam(self.lusr.parameters(), lr=1e-2)
+		self.lusr_optimizer = torch.optim.Adam(self.lusr.parameters(), lr=1e-3)
 
 	def vae_loss(self, x, mu, logsigma, recon_x, beta=1):
 		recon_loss = F.mse_loss(x, recon_x, reduction='mean')
