@@ -24,16 +24,18 @@ class SAC(object):
 				param.requires_grad = False
 
 		head_cnn = m.HeadCNN(shared_cnn.out_shape, args.num_head_layers, args.num_filters).cuda()
-		
+
+		actor_projection = m.RLProjection(head_cnn.out_shape, args.projection_dim)
 		actor_encoder = m.Encoder(
 			shared_cnn,
 			head_cnn,
-			m.RLProjection(head_cnn.out_shape, args.projection_dim)
+			actor_projection
 		)
+		critic_projection = m.RLProjection(head_cnn.out_shape, args.projection_dim)
 		critic_encoder = m.Encoder(
 			shared_cnn,
 			head_cnn,
-			m.RLProjection(head_cnn.out_shape, args.projection_dim)
+			critic_projection
 		)
 
 		self.actor = m.Actor(actor_encoder, action_shape, args.hidden_dim, args.actor_log_std_min, args.actor_log_std_max).cuda()
@@ -44,15 +46,25 @@ class SAC(object):
 		self.log_alpha.requires_grad = True
 		self.target_entropy = -np.prod(action_shape)
 
-		self.actor_optimizer = torch.optim.Adam(
-			self.actor.parameters(), lr=args.actor_lr, betas=(args.actor_beta, 0.999)
+		self.actor_optimizer = torch.optim.Adam([
+            {'params': list(shared_cnn.parameters()) + list(head_cnn.parameters())},
+            {'params': list(actor_projection.parameters()) + list(self.actor.mlp.parameters())},
+        ], lr=args.actor_lr, betas=(args.actor_beta, 0.999))
+
+		self.critic_optimizer = torch.optim.Adam([
+            {'params': list(shared_cnn.parameters()) + list(head_cnn.parameters())},
+            {'params': list(critic_projection.parameters()) + list(self.critic.Q1.parameters()) + list(self.critic.Q2.parameters())},
+        ], lr=args.critic_lr, betas=(args.critic_beta, 0.999)
 		)
-		self.critic_optimizer = torch.optim.Adam(
-			self.critic.parameters(), lr=args.critic_lr, betas=(args.critic_beta, 0.999)
-		)
+
 		self.log_alpha_optimizer = torch.optim.Adam(
 			[self.log_alpha], lr=args.alpha_lr, betas=(args.alpha_beta, 0.999)
 		)
+
+		if args.lusr_weights_path is not None:
+			print('Reducing encoder lr by 10x')
+			self.actor_optimizer.param_groups[0]['lr'] = self.actor_optimizer.param_groups[0]['lr'] / 10
+			self.critic_optimizer.param_groups[0]['lr'] = self.critic_optimizer.param_groups[0]['lr'] / 10
 
 		self.train()
 		self.critic_target.train()

@@ -22,7 +22,10 @@ class LUSR(SAC):
 		self.svea_beta = args.svea_beta
 
 		self.lusr = m.LUSR(self.shared_cnn, self.head_cnn, obs_shape, args.num_shared_layers, args.num_filters).cuda()
-		self.lusr_optimizer = torch.optim.Adam(self.lusr.parameters(), lr=1e-2)
+		self.lusr_optimizer = torch.optim.Adam([
+            {'params': list(self.lusr.shared_cnn.parameters()) + list(self.lusr.head_cnn.parameters())},
+            {'params': list(self.lusr.linear_mu_projection.parameters()) + list(self.lusr.linear_classcode_projection.parameters())},
+        ], lr=1e-2)
 
 	def vae_loss(self, x, mu, logsigma, recon_x, beta=1):
 		recon_loss = F.mse_loss(x, recon_x, reduction='mean')
@@ -140,7 +143,7 @@ class LUSR(SAC):
 
 		if L is not None:
 			L.log('train_critic/loss', critic_loss, step)
-			
+
 		self.critic_optimizer.zero_grad()
 		critic_loss.backward()
 		self.critic_optimizer.step()
@@ -178,4 +181,3 @@ class LUSR(SAC):
 
 		if step % self.critic_target_update_freq == 0:
 			self.soft_update_critic_target()
-

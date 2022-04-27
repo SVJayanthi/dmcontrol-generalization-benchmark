@@ -97,40 +97,47 @@ class Flatten(nn.Module):
 
 
 class LUSR(nn.Module):
-	def __init__(self, shared_cnn, head_cnn, obs_shape, num_shared_layers, num_filters, class_latent_size = 8, content_latent_size = 32):
-		super().__init__()
-		self.linear_mu = Encoder(
-			shared_cnn,
-			head_cnn,
-			RLProjection(head_cnn.out_shape, content_latent_size)
-		)
-		# self.linear_logsigma = Encoder(
-		# 	shared_cnn,
-		# 	head_cnn,
-		# 	RLProjection(head_cnn.out_shape, content_latent_size)
-		# )
-		self.linear_classcode = Encoder(
-			shared_cnn,
-			head_cnn,
-			RLProjection(head_cnn.out_shape, class_latent_size)
-		)
+    def __init__(self, shared_cnn, head_cnn, obs_shape, num_shared_layers, num_filters, class_latent_size = 8, content_latent_size = 32):
+        super().__init__()
+        self.shared_cnn = shared_cnn
+        self.head_cnn = head_cnn
 
-		self.decoder_lusr = LUSR_Decoder(content_latent_size +class_latent_size, flatten_size=head_cnn.out_shape[0])
-		# self.decoder_head_cnn = nn.Linear(content_latent_size+class_latent_size,head_cnn.out_shape[0] )
-		# self.decoder_shared_cnn = SharedCNNDecoder(obs_shape, num_shared_layers, num_filters).cuda()
+        self.linear_mu_projection = RLProjection(head_cnn.out_shape, content_latent_size)
+        self.linear_mu = Encoder(
+            self.shared_cnn,
+            self.head_cnn,
+            self.linear_mu_projection
+        )
 
-	def encoder(self, x):
-		mu = self.linear_mu(x)
-		# logsigma = self.linear_logsigma(x)
-		classcode = self.linear_classcode(x)
+        # self.linear_logsigma = Encoder(
+        #     shared_cnn,
+        #     head_cnn,
+        #     RLProjection(head_cnn.out_shape, content_latent_size)
+        # )
 
-		return mu, classcode #logsigma, classcode
+        self.linear_classcode_projection = RLProjection(head_cnn.out_shape, class_latent_size)
+        self.linear_classcode = Encoder(
+            self.shared_cnn,
+            self.head_cnn,
+            self.linear_classcode_projection
+        )
 
-	def decoder(self, x):
-		# x = self.decoder_head_cnn(x)
-		# x = x.unsqueeze(-1).unsqueeze(-1)
-		# x = self.decoder_shared_cnn(x)
-		return self.decoder_lusr(x)
+        self.decoder_lusr = LUSR_Decoder(content_latent_size +class_latent_size, flatten_size=head_cnn.out_shape[0])
+        # self.decoder_head_cnn = nn.Linear(content_latent_size+class_latent_size,head_cnn.out_shape[0] )
+        # self.decoder_shared_cnn = SharedCNNDecoder(obs_shape, num_shared_layers, num_filters).cuda()
+
+    def encoder(self, x):
+        mu = self.linear_mu(x)
+        # logsigma = self.linear_logsigma(x)
+        classcode = self.linear_classcode(x)
+
+        return mu, classcode #logsigma, classcode
+
+    def decoder(self, x):
+        # x = self.decoder_head_cnn(x)
+        # x = x.unsqueeze(-1).unsqueeze(-1)
+        # x = self.decoder_shared_cnn(x)
+        return self.decoder_lusr(x)
 
 
 class RLProjection(nn.Module):

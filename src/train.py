@@ -96,10 +96,10 @@ def main(args):
 
 	for step in range(start_step, args.train_steps+1):
 		if done:
-			# if step > start_step:
-				# L.log('train/duration', time.time() - start_time, step)
-				# start_time = time.time()
-				# L.dump(step)
+			if step > start_step:
+				L.log('train/duration', time.time() - start_time, step)
+				start_time = time.time()
+				L.dump(step)
 
 			# Evaluate agent periodically
 			if step % args.eval_freq == 0:
@@ -134,7 +134,7 @@ def main(args):
 		# Run training update
 		if step >= args.init_steps:
 			num_updates = args.init_steps if step == args.init_steps else 1
-			if step == args.init_steps:
+			if step == args.init_steps and args.algorithm == 'lusr':
 				floss, bloss = [], []
 				for _ in range(num_updates):
 					f, b = agent.update_init(replay_buffer, L, step)
@@ -149,6 +149,9 @@ def main(args):
 				torch.save(agent, os.path.join(model_dir, f'{step}.pt'))
 				for _ in range(num_updates):
 					agent.update(replay_buffer, L, step)
+
+				print('Reducing encoder lr by 10x')
+				agent.lusr_optimizer.param_groups[0]['lr'] = agent.lusr_optimizer.param_groups[0]['lr'] / 10
 			else:
 				agent.update(replay_buffer, L, step)
 
