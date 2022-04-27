@@ -1,2 +1,2 @@
-
+python src\train.py --algorithm lusr --seed 7 --train_steps 100k --save_freq 10k --eval_freq 1k --eval_episodes 1
 python src\train.py --algorithm svea --seed 1 --train_steps 100k --save_freq 1k --eval_freq 1k
